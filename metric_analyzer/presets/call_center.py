@@ -20,27 +20,6 @@ CALL_CENTER_PRESETS: dict[str, dict] = {
         "numerator": "解决量",
         "denominator": "工单量",
     },
-    "平均处理时长": {
-        "method": DecompositionMethod.DIVISION,
-        "metric_type": MetricType.EFFICIENCY,
-        "dimensions": ["技能组", "工单类型"],
-        "numerator": "总处理时长",
-        "denominator": "通话量",
-    },
-    "平均等待时长": {
-        "method": DecompositionMethod.DIVISION,
-        "metric_type": MetricType.EFFICIENCY,
-        "dimensions": ["时段", "渠道"],
-        "numerator": "总等待时长",
-        "denominator": "呼入量",
-    },
-    "单位人员效率": {
-        "method": DecompositionMethod.DIVISION,
-        "metric_type": MetricType.EFFICIENCY,
-        "dimensions": ["团队", "班次"],
-        "numerator": "实际服务量",
-        "denominator": "上班时长",
-    },
     "接通率": {
         "method": DecompositionMethod.DUAL_FACTOR,
         "metric_type": MetricType.RATIO,

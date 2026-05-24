@@ -39,7 +39,6 @@ class MetricRegistry:
                     "addition": DecompositionMethod.ADDITION,
                     "subtraction": DecompositionMethod.SUBTRACTION,
                     "multiplication": DecompositionMethod.MULTIPLICATION,
-                    "division": DecompositionMethod.DIVISION,
                     "dual_factor": DecompositionMethod.DUAL_FACTOR,
                 }
                 type_map = {

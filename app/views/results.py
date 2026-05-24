@@ -8,9 +8,9 @@ import streamlit as st
 
 from metric_analyzer.engine import AnalysisEngine
 from metric_analyzer.interpreters.nl_generator import NLGenerator
-from metric_analyzer.components.charts import waterfall_chart, contribution_bar, composition_pie
+from metric_analyzer.components.charts import waterfall_chart, contribution_bar, composition_pie, dual_factor_grouped_bar
 from metric_analyzer.components.tables import result_table
-from metric_analyzer.models import AnalysisMode
+from metric_analyzer.models import AnalysisMode, DecompositionMethod
 
 
 def render():
@@ -47,7 +47,10 @@ def render():
 
     with col1:
         if result.mode == AnalysisMode.DYNAMIC:
-            fig = waterfall_chart(result, top_n=top_n)
+            if result.method == DecompositionMethod.DUAL_FACTOR:
+                fig = dual_factor_grouped_bar(result, top_n=top_n)
+            else:
+                fig = waterfall_chart(result, top_n=top_n)
         else:
             fig = composition_pie(result)
         st.plotly_chart(fig, use_container_width=True)

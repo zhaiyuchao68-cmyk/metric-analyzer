@@ -14,7 +14,6 @@ METHOD_MAP = {
     "加法拆解": DecompositionMethod.ADDITION,
     "减法拆解": DecompositionMethod.SUBTRACTION,
     "乘法拆解": DecompositionMethod.MULTIPLICATION,
-    "除法拆解": DecompositionMethod.DIVISION,
     "双因素拆解": DecompositionMethod.DUAL_FACTOR,
 }
 
@@ -72,32 +71,27 @@ def render():
     selected_method_name = st.selectbox("拆解方法", method_options, index=default_idx)
     selected_method = METHOD_MAP[selected_method_name]
 
-    # 分析模式
-    st.subheader("分析模式")
-    mode = st.radio("选择分析模式", ["静态（现状构成）", "动态（变化归因）"], horizontal=True)
-    is_dynamic = "动态" in mode
+    # 时间列选择：从维度列中选一个作为时间列，选"无"则静态分析
+    st.subheader("拆解维度")
+    available_dims = dim_cols + [c for c in numeric_cols if c not in dim_cols]
 
     time_col = None
     base_period = None
     compare_period = None
+    is_dynamic = False
 
-    if is_dynamic:
-        all_cols = df.columns.tolist()
-        time_col = st.selectbox("时间列", ["（请选择）"] + all_cols)
-        if time_col == "（请选择）":
-            st.warning("请选择时间列")
-            return
-
+    time_col_sel = st.selectbox('时间列（选"无"则进行静态构成分析）', ["无"] + dim_cols)
+    if time_col_sel != "无":
+        time_col = time_col_sel
         periods = df[time_col].unique().tolist()
-        base_period = st.selectbox("基期（上期）", periods, index=0)
-        compare_period = st.selectbox("对比期（本期）", periods, index=min(1, len(periods) - 1))
+        col1, col2 = st.columns(2)
+        with col1:
+            base_period = st.selectbox("基期（上期）", periods, index=0)
+        with col2:
+            compare_period = st.selectbox("对比期（本期）", periods, index=min(1, len(periods) - 1))
+        is_dynamic = True
 
-    # 拆解维度
-    st.subheader("拆解维度")
-    available_dims = dim_cols + [c for c in numeric_cols if c not in dim_cols]
-    if time_col and time_col in available_dims:
-        available_dims.remove(time_col)
-
+    available_dims = [c for c in available_dims if c != time_col]
     selected_dims = st.multiselect(
         "选择拆解维度（可多选）",
         available_dims,
@@ -106,7 +100,7 @@ def render():
 
     # 数值列配置
     st.subheader("数值列配置")
-    if selected_method in (DecompositionMethod.DUAL_FACTOR, DecompositionMethod.DIVISION):
+    if selected_method == DecompositionMethod.DUAL_FACTOR:
         col1, col2 = st.columns(2)
         with col1:
             numerator = st.selectbox("分子列", numeric_cols, index=0)
@@ -136,7 +130,7 @@ def render():
             compare_period=compare_period if is_dynamic else None,
         )
 
-        if selected_method in (DecompositionMethod.DUAL_FACTOR, DecompositionMethod.DIVISION):
+        if selected_method == DecompositionMethod.DUAL_FACTOR:
             config.numerator_col = numerator
             config.denominator_col = denominator
         elif selected_method == DecompositionMethod.ADDITION:

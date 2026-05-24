@@ -11,7 +11,6 @@ METHOD_LABELS = {
     DecompositionMethod.ADDITION: "加法拆解",
     DecompositionMethod.SUBTRACTION: "减法拆解",
     DecompositionMethod.MULTIPLICATION: "LMDI乘法拆解",
-    DecompositionMethod.DIVISION: "除法拆解",
     DecompositionMethod.DUAL_FACTOR: "双因素拆解",
 }
 
@@ -102,8 +101,8 @@ class NLGenerator:
 
         if is_abs:
             lines.append(f"整体{direction} **{self._fmt_value(abs(result.overall_change), result)}**。\n")
-        elif result.method in (DecompositionMethod.MULTIPLICATION, DecompositionMethod.DIVISION):
-            # 乘法/除法：量指标显示"XX通（下降X.X%）"
+        elif result.method == DecompositionMethod.MULTIPLICATION:
+            # 乘法：量指标显示"XX通（下降X.X%）"
             raw_text = f"{abs(result.overall_change):,.0f}"
             rate_text = f"{abs(result.overall_change_rate):.1f}%"
             unit = "通" if "量" in name else ""
@@ -119,8 +118,8 @@ class NLGenerator:
 
         lines.append(f"拆解结论（{METHOD_LABELS[result.method]}）：")
 
-        # 乘法/除法：贡献率 = LMDI值 / 上期总量 × 100%
-        is_mul = result.method in (DecompositionMethod.MULTIPLICATION, DecompositionMethod.DIVISION)
+        # 乘法：贡献率 = LMDI值 / 上期总量 × 100%
+        is_mul = result.method == DecompositionMethod.MULTIPLICATION
         base_overall = result.overall_change * 100 / result.overall_change_rate if is_mul and result.overall_change_rate != 0 else 1
 
         shown = result.contributions[:top_n]

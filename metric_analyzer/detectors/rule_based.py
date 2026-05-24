@@ -19,7 +19,6 @@ METHOD_DESCRIPTIONS = {
     DecompositionMethod.ADDITION: "适用于绝对量指标按维度拆分（如通话量按技能组拆）",
     DecompositionMethod.SUBTRACTION: "适用于衍生差值指标（如利润=收入-成本-费用）",
     DecompositionMethod.MULTIPLICATION: "适用于流程链路指标（如成交用户=新增×激活率×留存率×购买率）",
-    DecompositionMethod.DIVISION: "适用于效率/比例指标的分母拆分（如单位人员效率）",
     DecompositionMethod.DUAL_FACTOR: "适用于相对数指标按维度拆分（如满意度按语言线拆）",
 }
 

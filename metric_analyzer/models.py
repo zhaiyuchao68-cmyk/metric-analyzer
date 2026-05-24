@@ -12,7 +12,6 @@ class DecompositionMethod(Enum):
     ADDITION = "加法拆解"
     SUBTRACTION = "减法拆解"
     MULTIPLICATION = "乘法拆解"
-    DIVISION = "除法拆解"
     DUAL_FACTOR = "双因素拆解"
 
 
@@ -36,7 +35,7 @@ METRIC_TYPE_TO_METHOD = {
     MetricType.DERIVED_DIFF: DecompositionMethod.SUBTRACTION,
     MetricType.FLOW_CHAIN: DecompositionMethod.MULTIPLICATION,
     MetricType.RATIO: DecompositionMethod.DUAL_FACTOR,
-    MetricType.EFFICIENCY: DecompositionMethod.DIVISION,
+    MetricType.EFFICIENCY: DecompositionMethod.MULTIPLICATION,
 }
 
 
@@ -71,6 +70,9 @@ class FactorContribution:
     value_change: float
     contribution_rate: float
     rank: int
+    rate_effect: Optional[float] = None
+    share_effect: Optional[float] = None
+    explanation: Optional[str] = None
 
 
 @dataclass

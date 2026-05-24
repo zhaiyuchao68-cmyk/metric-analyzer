@@ -8,7 +8,7 @@ import streamlit as st
 # 将项目根目录加入 path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.pages import upload, configure, results
+from app.views import upload, configure, results
 
 
 def main():

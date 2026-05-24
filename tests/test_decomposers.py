@@ -204,7 +204,6 @@ class TestMultiplicationDecomposer:
         assert a_contrib.value_change == pytest.approx(0.0, abs=0.01)
 
 
-from metric_analyzer.decomposers.division import DivisionDecomposer
 from metric_analyzer.decomposers.dual_factor import DualFactorDecomposer
 
 
@@ -274,42 +273,3 @@ class TestDualFactorDecomposer:
         )
         result = self.decomposer.decompose(config)
         assert any(c.name == "日语" for c in result.contributions)
-
-
-class TestDivisionDecomposer:
-    def setup_method(self):
-        self.decomposer = DivisionDecomposer()
-
-    def test_can_handle(self):
-        config = MetricConfig(
-            name="单位人员效率",
-            metric_type=MetricType.EFFICIENCY,
-            method=DecompositionMethod.DIVISION,
-            data=pd.DataFrame(),
-            dimensions=["团队"],
-            numerator_col="实际服务量",
-            denominator_col="上班时长",
-        )
-        assert self.decomposer.can_handle(config) is True
-
-    def test_static_decompose(self):
-        data = pd.DataFrame({
-            "团队": ["A组"],
-            "实际服务量": [5000],
-            "直服排班时间": [400],
-            "排班时间": [450],
-            "在线时长": [480],
-            "上班时长": [500],
-        })
-        config = MetricConfig(
-            name="单位人员效率",
-            metric_type=MetricType.EFFICIENCY,
-            method=DecompositionMethod.DIVISION,
-            data=data,
-            dimensions=["团队"],
-            numerator_col="实际服务量",
-            denominator_col="上班时长",
-        )
-        result = self.decomposer.decompose(config)
-        assert result.method == DecompositionMethod.DIVISION
-        assert result.overall_change == pytest.approx(10.0, abs=0.01)

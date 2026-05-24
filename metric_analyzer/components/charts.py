@@ -47,18 +47,26 @@ def waterfall_chart(result: DecompositionResult, top_n: int = 5) -> go.Figure:
     """瀑布图：展示各因子贡献的正负累积"""
     contributions = result.contributions[:top_n]
     is_abs = result.method in _ABSOLUTE_METHODS
-    is_mul = result.method in (DecompositionMethod.MULTIPLICATION, DecompositionMethod.DIVISION)
+    is_mul = result.method == DecompositionMethod.MULTIPLICATION
 
     labels = ["起始"] + [c.name for c in contributions] + ["合计"]
     values = [0] + [c.value_change for c in contributions] + [0]
 
     measure = ["absolute"] + ["relative"] * len(contributions) + ["total"]
 
+    # 柱上文字
+    if is_abs or is_mul:
+        text_labels = [""] + [f"{v:+,.0f}" for v in values[1:-1]] + [f"{sum(c.value_change for c in contributions):+,.0f}"]
+    else:
+        text_labels = [""] + [f"{v*100:+.2f}%" for v in values[1:-1]] + [""]
+
     fig = go.Figure(go.Waterfall(
         orientation="v",
         measure=measure,
         x=labels,
         y=values,
+        text=text_labels,
+        textposition="outside",
         connector={"line": {"color": "rgb(63, 63, 63)"}},
         increasing={"marker": {"color": "#2ca02c"}},
         decreasing={"marker": {"color": "#d62728"}},
@@ -86,7 +94,7 @@ def contribution_bar(result: DecompositionResult, top_n: int = 5) -> go.Figure:
     """贡献值排名柱状图"""
     contributions = result.contributions[:top_n]
     is_abs = result.method in _ABSOLUTE_METHODS
-    is_mul = result.method in (DecompositionMethod.MULTIPLICATION, DecompositionMethod.DIVISION)
+    is_mul = result.method == DecompositionMethod.MULTIPLICATION
 
     names = [c.name for c in contributions]
 
@@ -95,7 +103,7 @@ def contribution_bar(result: DecompositionResult, top_n: int = 5) -> go.Figure:
         text_labels = [f"{v:+,.0f}" for v in values]
         title, yaxis = "因子贡献排名", "变化量"
     elif is_mul:
-        # 乘法/除法：贡献率 = LMDI值 / 上期总量 × 100%
+        # 乘法：贡献率 = LMDI值 / 上期总量 × 100%
         base_overall = result.overall_change * 100 / result.overall_change_rate if result.overall_change_rate != 0 else 1
         values = [c.value_change / base_overall * 100 for c in contributions]
         text_labels = [f"{v:+.2f}%" for v in values]

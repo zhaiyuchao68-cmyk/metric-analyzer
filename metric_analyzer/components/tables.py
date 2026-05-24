@@ -11,7 +11,7 @@ _PCT_COLS_KEYWORDS = ["指标值", "占比", "波动贡献", "结构变化贡献
 _INTERNAL_COLS = ["上期整体均值", "本期整体均值", "贡献率(%)"]
 # 量指标方法（加减法），数值列不转百分比
 _ABSOLUTE_METHODS = {DecompositionMethod.ADDITION, DecompositionMethod.SUBTRACTION}
-_MUL_METHODS = {DecompositionMethod.MULTIPLICATION, DecompositionMethod.DIVISION}
+_MUL_METHODS = {DecompositionMethod.MULTIPLICATION}
 # 量指标的数值列关键词（不转百分比）
 _ABSOLUTE_VALUE_KEYWORDS = ["值", "变化量", "变化", "LMDI贡献", "数值", "总贡献", "波动贡献", "结构变化贡献"]
 
@@ -25,7 +25,7 @@ def result_table(result: DecompositionResult, top_n: int = 5) -> pd.DataFrame:
         df = result.detail_table.head(top_n).copy()
         # 去掉内部列
         df = df.drop(columns=[c for c in _INTERNAL_COLS if c in df.columns], errors="ignore")
-        # 乘法/除法：重算贡献率 = LMDI值 / 上期总量 × 100%
+        # 乘法：重算贡献率 = LMDI值 / 上期总量 × 100%
         if is_mul and "贡献率(%)" in df.columns:
             base_overall = result.overall_change * 100 / result.overall_change_rate if result.overall_change_rate != 0 else 1
             lmdi_col = next((c for c in df.columns if "LMDI" in c or "总贡献" in c), None)
@@ -37,7 +37,7 @@ def result_table(result: DecompositionResult, top_n: int = 5) -> pd.DataFrame:
         for col in df.columns:
             if col == "贡献率(%)" and is_mul:
                 continue  # 已经处理过
-            # 乘法/除法：LMDI相关列取整显示
+            # 乘法：LMDI相关列取整显示
             if is_mul and any(kw in col for kw in _ABSOLUTE_VALUE_KEYWORDS):
                 df[col] = df[col].apply(
                     lambda v: f"{v:+,.0f}" if isinstance(v, (int, float)) else v
@@ -50,7 +50,7 @@ def result_table(result: DecompositionResult, top_n: int = 5) -> pd.DataFrame:
                         lambda v: f"{v:,.0f}" if isinstance(v, (int, float)) else v
                     )
                 elif is_mul:
-                    # 乘法/除法：同列有任一值>1则按数值，否则按百分比
+                    # 乘法：同列有任一值>1则按数值，否则按百分比
                     numeric_vals = [v for v in df[col] if isinstance(v, (int, float))]
                     if any(abs(v) > 1 for v in numeric_vals):
                         df[col] = df[col].apply(

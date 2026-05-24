@@ -8,7 +8,6 @@ from metric_analyzer.decomposers import (
     MultiplicationDecomposer,
     SubtractionDecomposer,
 )
-from metric_analyzer.decomposers.division import DivisionDecomposer
 from metric_analyzer.detectors import MetricDetector, MetricRegistry
 from metric_analyzer.models import DecompositionMethod, DecompositionResult, MetricConfig
 
@@ -21,7 +20,6 @@ class AnalysisEngine:
             AdditionDecomposer(),
             SubtractionDecomposer(),
             MultiplicationDecomposer(),
-            DivisionDecomposer(),
             DualFactorDecomposer(),
         ]
         self._detector = MetricDetector()
