@@ -37,6 +37,12 @@ def result_table(result: DecompositionResult, top_n: int = 5) -> pd.DataFrame:
         for col in df.columns:
             if col == "贡献率(%)" and is_mul:
                 continue  # 已经处理过
+            # 乘法/除法：LMDI相关列取整显示
+            if is_mul and any(kw in col for kw in _ABSOLUTE_VALUE_KEYWORDS):
+                df[col] = df[col].apply(
+                    lambda v: f"{v:+,.0f}" if isinstance(v, (int, float)) else v
+                )
+                continue
             if any(kw in col for kw in _PCT_COLS_KEYWORDS):
                 # 量指标的数值列不转百分比
                 if is_abs and any(kw in col for kw in _ABSOLUTE_VALUE_KEYWORDS):
