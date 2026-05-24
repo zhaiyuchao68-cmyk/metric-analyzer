@@ -23,26 +23,32 @@ def render():
             st.session_state["data"] = df
             st.session_state["filename"] = uploaded_file.name
 
-            st.success(f"文件 '{uploaded_file.name}' 上传成功，共 {len(df)} 行 {len(df.columns)} 列")
-
-            st.subheader("数据预览")
-            st.dataframe(df.head(20), use_container_width=True)
-
-            numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
-            st.session_state["numeric_cols"] = numeric_cols
-
-            st.subheader("识别到的数值列")
-            st.write("、".join(numeric_cols) if numeric_cols else "未发现数值列")
-
-            dim_cols = [c for c in df.columns if c not in numeric_cols]
-            st.session_state["dim_cols"] = dim_cols
-
-            if dim_cols:
-                st.subheader("识别到的维度列")
-                st.write("、".join(dim_cols))
-
         except Exception as e:
             st.error(f"文件读取失败：{e}")
+
+    # 已有数据时显示状态（无论是否刚上传）
+    if "data" in st.session_state:
+        df = st.session_state["data"]
+        filename = st.session_state.get("filename", "未知文件")
+        st.success(f"已加载文件：{filename}（{len(df)} 行 × {len(df.columns)} 列）")
+
+        st.subheader("数据预览")
+        st.dataframe(df.head(20), use_container_width=True)
+
+        numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
+        st.session_state["numeric_cols"] = numeric_cols
+
+        st.subheader("识别到的数值列")
+        st.write("、".join(numeric_cols) if numeric_cols else "未发现数值列")
+
+        dim_cols = [c for c in df.columns if c not in numeric_cols]
+        st.session_state["dim_cols"] = dim_cols
+
+        if dim_cols:
+            st.subheader("识别到的维度列")
+            st.write("、".join(dim_cols))
+
+        st.info("数据已就绪，请在左侧导航点击「配置拆解」继续")
     else:
         st.info("请上传数据文件以开始分析")
 
