@@ -15,6 +15,9 @@ METHOD_LABELS = {
     DecompositionMethod.DUAL_FACTOR: "双因素拆解",
 }
 
+# 量指标（加减法）用原始数值，率指标（乘除+双因素）用百分比
+_ABSOLUTE_METHODS = {DecompositionMethod.ADDITION, DecompositionMethod.SUBTRACTION}
+
 
 class NLGenerator:
     """自然语言解读生成器"""
@@ -26,6 +29,9 @@ class NLGenerator:
         if result.method == DecompositionMethod.DUAL_FACTOR:
             return self._dual_factor_report(result, metric_name, top_n)
         return self._dynamic_summary(result, metric_name, top_n)
+
+    def _is_absolute(self, result) -> bool:
+        return result.method in _ABSOLUTE_METHODS
 
     def _direction_text(self, change: float) -> str:
         if change > 0:
@@ -50,6 +56,22 @@ class NLGenerator:
         """将小数值转为百分点文本，如 -0.023 → '2.30'"""
         return f"{abs(value) * 100:.2f}"
 
+    def _fmt_value(self, value: float, result) -> str:
+        """格式化数值：量指标用原始数字，率指标用百分比"""
+        if self._is_absolute(result):
+            if abs(value) >= 1:
+                return f"{value:,.0f}"
+            return f"{value:.2f}"
+        return f"{value * 100:.2f}%"
+
+    def _fmt_signed(self, value: float, result) -> str:
+        """格式化带符号数值"""
+        if self._is_absolute(result):
+            if abs(value) >= 1:
+                return f"{value:+,.0f}"
+            return f"{value:+.2f}"
+        return self._pct_signed(value)
+
     def _static_summary(self, result: DecompositionResult, name: str, top_n: int) -> str:
         """静态拆解解读"""
         lines = [f"**{name} 现状构成分析**\n"]
@@ -58,12 +80,12 @@ class NLGenerator:
             lines.append("暂无数据可分析。")
             return "\n".join(lines)
 
-        lines.append(f"整体值为 **{self._pct(result.overall_change)}**。\n")
+        lines.append(f"整体值为 **{self._fmt_value(result.overall_change, result)}**。\n")
         lines.append(f"构成分解（Top {top_n}）：")
 
         shown = result.contributions[:top_n]
         for c in shown:
-            lines.append(f"- {c.name}：{self._pct(c.value_change)}（占比 {c.contribution_rate:.1f}%）")
+            lines.append(f"- {c.name}：{self._fmt_value(c.value_change, result)}（占比 {c.contribution_rate:.1f}%）")
 
         if len(result.contributions) > top_n:
             other_rate = sum(c.contribution_rate for c in result.contributions[top_n:])
@@ -74,12 +96,16 @@ class NLGenerator:
     def _dynamic_summary(self, result: DecompositionResult, name: str, top_n: int) -> str:
         """动态拆解解读（非双因素）"""
         direction = self._direction_text(result.overall_change)
+        is_abs = self._is_absolute(result)
 
         lines = [f"**{name} 变化归因分析**\n"]
 
-        pct_text = f"{abs(result.overall_change) * 100:.2f}%"
-        rate_text = f"{abs(result.overall_change_rate):.1f}%"
-        lines.append(f"整体{direction} **{pct_text}**（{direction}{rate_text}）。\n")
+        if is_abs:
+            lines.append(f"整体{direction} **{self._fmt_value(abs(result.overall_change), result)}**。\n")
+        else:
+            pct_text = f"{abs(result.overall_change) * 100:.2f}%"
+            rate_text = f"{abs(result.overall_change_rate):.1f}%"
+            lines.append(f"整体{direction} **{pct_text}**（{direction}{rate_text}）。\n")
 
         if not result.contributions:
             lines.append("暂无贡献数据。")
@@ -89,22 +115,23 @@ class NLGenerator:
 
         shown = result.contributions[:top_n]
         for c in shown:
-            pct = self._pct_signed(c.value_change)
+            val = self._fmt_signed(c.value_change, result)
             if c.value_change == 0:
                 lines.append(f"- **{c.name}**：持平")
             else:
-                lines.append(f"- **{c.name}**：{pct}")
+                lines.append(f"- **{c.name}**：{val}")
 
         if len(result.contributions) > top_n:
-            other_pct = sum(c.value_change for c in result.contributions[top_n:])
-            lines.append(f"- 其他：{self._pct_signed(other_pct)}")
+            other = sum(c.value_change for c in result.contributions[top_n:])
+            lines.append(f"- 其他：{self._fmt_signed(other, result)}")
 
         negatives = [c for c in result.contributions if c.value_change < 0]
         if negatives:
             lines.append(f"\n**建议**：重点关注 **{negatives[0].name}**，是最大的拖累因素。")
 
         if result.is_mece:
-            lines.append(f"\n*各因子贡献加总 = {self._pct_signed(sum(c.value_change for c in result.contributions))}，与整体变化一致（MECE）。*")
+            total = self._fmt_signed(sum(c.value_change for c in result.contributions), result)
+            lines.append(f"\n*各因子贡献加总 = {total}，与整体变化一致（MECE）。*")
 
         return "\n".join(lines)
 
