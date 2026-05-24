@@ -102,6 +102,12 @@ class NLGenerator:
 
         if is_abs:
             lines.append(f"整体{direction} **{self._fmt_value(abs(result.overall_change), result)}**。\n")
+        elif result.method in (DecompositionMethod.MULTIPLICATION, DecompositionMethod.DIVISION):
+            # 乘法/除法：量指标显示"XX通（下降X.X%）"
+            raw_text = f"{abs(result.overall_change):,.0f}"
+            rate_text = f"{abs(result.overall_change_rate):.1f}%"
+            unit = "通" if "量" in name else ""
+            lines.append(f"整体{direction} **{raw_text}{unit}**（{direction}{rate_text}）。\n")
         else:
             pct_text = f"{abs(result.overall_change) * 100:.2f}%"
             rate_text = f"{abs(result.overall_change_rate):.1f}%"
