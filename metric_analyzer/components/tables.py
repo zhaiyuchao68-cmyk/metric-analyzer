@@ -49,6 +49,17 @@ def result_table(result: DecompositionResult, top_n: int = 5) -> pd.DataFrame:
                     df[col] = df[col].apply(
                         lambda v: f"{v:,.0f}" if isinstance(v, (int, float)) else v
                     )
+                elif is_mul:
+                    # 乘法/除法：同列有任一值>1则按数值，否则按百分比
+                    numeric_vals = [v for v in df[col] if isinstance(v, (int, float))]
+                    if any(abs(v) > 1 for v in numeric_vals):
+                        df[col] = df[col].apply(
+                            lambda v: f"{v:,.0f}" if isinstance(v, (int, float)) else v
+                        )
+                    else:
+                        df[col] = df[col].apply(
+                            lambda v: f"{v * 100:.2f}%" if isinstance(v, (int, float)) else v
+                        )
                 else:
                     df[col] = df[col].apply(
                         lambda v: f"{v * 100:.2f}%" if isinstance(v, (int, float)) else v
