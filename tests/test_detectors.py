@@ -1,7 +1,6 @@
 """指标类型检测器测试"""
 
 import pandas as pd
-import pytest
 
 from metric_analyzer.detectors.rule_based import MetricDetector
 from metric_analyzer.models import DecompositionMethod, MetricType

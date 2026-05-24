@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from metric_analyzer.models import DecompositionMethod, MetricType
+from metric_analyzer.models import METRIC_TYPE_TO_METHOD, DecompositionMethod, MetricType
 
 
 # 关键词 → 指标类型
@@ -13,15 +13,6 @@ KEYWORD_RULES: dict[MetricType, list[str]] = {
     MetricType.FLOW_CHAIN: ["漏斗", "激活", "购买", "成交"],
     MetricType.DERIVED_DIFF: ["利润", "净收入", "毛利", "差值", "缺口"],
     MetricType.ABSOLUTE: ["量", "数", "收入", "保费", "通话", "工单", "新增"],
-}
-
-# 指标类型 → 推荐拆解方法
-TYPE_TO_METHOD = {
-    MetricType.ABSOLUTE: DecompositionMethod.ADDITION,
-    MetricType.DERIVED_DIFF: DecompositionMethod.SUBTRACTION,
-    MetricType.FLOW_CHAIN: DecompositionMethod.MULTIPLICATION,
-    MetricType.RATIO: DecompositionMethod.DUAL_FACTOR,
-    MetricType.EFFICIENCY: DecompositionMethod.DIVISION,
 }
 
 METHOD_DESCRIPTIONS = {
@@ -39,7 +30,7 @@ class MetricDetector:
     def detect(self, df: pd.DataFrame, name: str) -> list[dict]:
         """检测指标类型，返回候选方法列表，按置信度降序"""
         keyword_hits = self._keyword_match(name)
-        structure_hits = self._structure_analyze(df, name)
+        structure_hits = self._structure_analyze(df)
 
         scores: dict[MetricType, float] = {}
         reasons: dict[MetricType, str] = {}
@@ -57,7 +48,7 @@ class MetricDetector:
 
         results = []
         for mt, score in sorted(scores.items(), key=lambda x: x[1], reverse=True):
-            method = TYPE_TO_METHOD[mt]
+            method = METRIC_TYPE_TO_METHOD[mt]
             results.append({
                 "metric_type": mt,
                 "method": method,
@@ -87,7 +78,7 @@ class MetricDetector:
                     break
         return hits
 
-    def _structure_analyze(self, df: pd.DataFrame, name: str) -> list[tuple[MetricType, float, str]]:
+    def _structure_analyze(self, df: pd.DataFrame) -> list[tuple[MetricType, float, str]]:
         hits = []
         if df.empty:
             return hits
