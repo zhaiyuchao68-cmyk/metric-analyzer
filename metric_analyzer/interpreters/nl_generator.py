@@ -119,25 +119,41 @@ class NLGenerator:
 
         lines.append(f"拆解结论（{METHOD_LABELS[result.method]}）：")
 
+        # 乘法/除法：贡献率 = LMDI值 / 上期总量 × 100%
+        is_mul = result.method in (DecompositionMethod.MULTIPLICATION, DecompositionMethod.DIVISION)
+        base_overall = result.overall_change * 100 / result.overall_change_rate if is_mul and result.overall_change_rate != 0 else 1
+
         shown = result.contributions[:top_n]
         for c in shown:
-            val = self._fmt_signed(c.value_change, result)
             if c.value_change == 0:
                 lines.append(f"- **{c.name}**：持平")
+            elif is_mul:
+                rate = c.value_change / base_overall * 100
+                lines.append(f"- **{c.name}**：{rate:+.2f}%")
             else:
+                val = self._fmt_signed(c.value_change, result)
                 lines.append(f"- **{c.name}**：{val}")
 
         if len(result.contributions) > top_n:
-            other = sum(c.value_change for c in result.contributions[top_n:])
-            lines.append(f"- 其他：{self._fmt_signed(other, result)}")
+            if is_mul:
+                other = sum(c.value_change for c in result.contributions[top_n:])
+                other_rate = other / base_overall * 100
+                lines.append(f"- 其他：{other_rate:+.2f}%")
+            else:
+                other = sum(c.value_change for c in result.contributions[top_n:])
+                lines.append(f"- 其他：{self._fmt_signed(other, result)}")
 
         negatives = [c for c in result.contributions if c.value_change < 0]
         if negatives:
             lines.append(f"\n**建议**：重点关注 **{negatives[0].name}**，是最大的拖累因素。")
 
         if result.is_mece:
-            total = self._fmt_signed(sum(c.value_change for c in result.contributions), result)
-            lines.append(f"\n*各因子贡献加总 = {total}，与整体变化一致（MECE）。*")
+            total_val = sum(c.value_change for c in result.contributions)
+            if is_mul:
+                lines.append(f"\n*LMDI各因子贡献加总 = {total_val:+,.0f}，与整体变化一致（MECE）。*")
+            else:
+                total = self._fmt_signed(total_val, result)
+                lines.append(f"\n*各因子贡献加总 = {total}，与整体变化一致（MECE）。*")
 
         return "\n".join(lines)
 

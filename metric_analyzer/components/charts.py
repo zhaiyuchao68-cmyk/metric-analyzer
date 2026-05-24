@@ -47,6 +47,7 @@ def waterfall_chart(result: DecompositionResult, top_n: int = 5) -> go.Figure:
     """瀑布图：展示各因子贡献的正负累积"""
     contributions = result.contributions[:top_n]
     is_abs = result.method in _ABSOLUTE_METHODS
+    is_mul = result.method in (DecompositionMethod.MULTIPLICATION, DecompositionMethod.DIVISION)
 
     labels = ["起始"] + [c.name for c in contributions] + ["合计"]
     values = [0] + [c.value_change for c in contributions] + [0]
@@ -64,11 +65,17 @@ def waterfall_chart(result: DecompositionResult, top_n: int = 5) -> go.Figure:
         totals={"marker": {"color": "#1f77b4"}},
     ))
 
-    yaxis_title = "数量" if is_abs else "贡献（%）"
+    if is_abs:
+        title, yaxis = "因子贡献瀑布图", "数量"
+    elif is_mul:
+        title, yaxis = "LMDI贡献值", "通数"
+    else:
+        title, yaxis = "因子贡献瀑布图", "贡献（%）"
+
     fig.update_layout(
-        title="因子贡献瀑布图",
+        title=title,
         showlegend=False,
-        yaxis_title=yaxis_title,
+        yaxis_title=yaxis,
         height=400,
     )
 
@@ -79,16 +86,24 @@ def contribution_bar(result: DecompositionResult, top_n: int = 5) -> go.Figure:
     """贡献值排名柱状图"""
     contributions = result.contributions[:top_n]
     is_abs = result.method in _ABSOLUTE_METHODS
+    is_mul = result.method in (DecompositionMethod.MULTIPLICATION, DecompositionMethod.DIVISION)
 
     names = [c.name for c in contributions]
+
     if is_abs:
         values = [c.value_change for c in contributions]
         text_labels = [f"{v:+,.0f}" for v in values]
-        yaxis_title = "变化量"
+        title, yaxis = "因子贡献排名", "变化量"
+    elif is_mul:
+        # 乘法/除法：贡献率 = LMDI值 / 上期总量 × 100%
+        base_overall = result.overall_change * 100 / result.overall_change_rate if result.overall_change_rate != 0 else 1
+        values = [c.value_change / base_overall * 100 for c in contributions]
+        text_labels = [f"{v:+.2f}%" for v in values]
+        title, yaxis = "各因素幅度变化", "幅度（%）"
     else:
         values = [c.value_change * 100 for c in contributions]
         text_labels = [f"{v:+.2f}%" for v in values]
-        yaxis_title = "贡献（%）"
+        title, yaxis = "因子贡献排名", "贡献（%）"
 
     colors = ["#2ca02c" if v >= 0 else "#d62728" for v in values]
 
@@ -101,8 +116,8 @@ def contribution_bar(result: DecompositionResult, top_n: int = 5) -> go.Figure:
     ))
 
     fig.update_layout(
-        title="因子贡献排名",
-        yaxis_title=yaxis_title,
+        title=title,
+        yaxis_title=yaxis,
         height=400,
     )
 
