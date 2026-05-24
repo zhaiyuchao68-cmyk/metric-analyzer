@@ -1,0 +1,19 @@
+# 自定义指标配置示例
+# 将此文件复制为 custom_metrics.yaml 并修改后，在工具中导入
+
+单通成本:
+  method: subtraction
+  dimensions: [技能组]
+  components: [人力成本, 系统成本, 其他成本]
+
+客户回访率:
+  method: dual_factor
+  dimensions: [语言线, 渠道]
+  numerator: 回访量
+  denominator: 服务量
+
+坐席利用率:
+  method: division
+  dimensions: [班组]
+  numerator: 通话时长
+  denominator: 在班时长
