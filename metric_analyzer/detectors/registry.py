@@ -7,13 +7,17 @@ import yaml
 
 from metric_analyzer.models import DecompositionMethod, MetricType
 from metric_analyzer.presets.call_center import CALL_CENTER_PRESETS
+from metric_analyzer.presets.ecommerce import ECOMMERCE_PRESETS
 
 
 class MetricRegistry:
     """指标注册表"""
 
     def __init__(self):
-        self._presets: dict[str, dict] = dict(CALL_CENTER_PRESETS)
+        self._presets: dict[str, dict] = {
+            **CALL_CENTER_PRESETS,
+            **ECOMMERCE_PRESETS,
+        }
 
     def get_preset(self, name: str) -> Optional[dict]:
         """获取预设指标配置"""

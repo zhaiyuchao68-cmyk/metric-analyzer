@@ -46,7 +46,7 @@ class NLGenerator:
     def _pct_signed(self, value: float) -> str:
         """带正负号的百分比文本，如 -0.023 → '-2.30%'"""
         pct = value * 100
-        if abs(pct) < 0.005:
+        if abs(pct) < 1e-6:
             return "0.00%"
         sign = "+" if pct > 0 else ""
         return f"{sign}{pct:.2f}%"
@@ -193,7 +193,7 @@ class NLGenerator:
             # ① 指标波动
             lines.append(f"**① 指标波动 {self._pct_signed(re)}（{re_label}）**")
             if abs(re) >= 1e-8:
-                lines.append(self._rate_narrative(c.name, re, se, result))
+                lines.append(self._rate_narrative(c.name, re, se, result, name))
             else:
                 lines.append(f"  {'上期不存在，无指标变化可比。' if abs(se) > 1e-8 else '指标值没有变化。'}")
             lines.append("")
@@ -201,7 +201,7 @@ class NLGenerator:
             # ② 占比波动
             lines.append(f"**② 占比波动 {self._pct_signed(se)}（{se_label}）**")
             if abs(se) >= 1e-8:
-                lines.append(self._share_narrative(c.name, re, se, result))
+                lines.append(self._share_narrative(c.name, re, se, result, name))
             else:
                 lines.append(f"  占比没有变化。")
             lines.append("")
@@ -209,7 +209,7 @@ class NLGenerator:
         # 简单记
         lines.append("---")
         lines.append("**简单记：**")
-        lines.append("- 指标波动 = 这条线自己好评率变了，对整体的影响")
+        lines.append(f"- 指标波动 = 这条线自己{name}变了，对整体的影响")
         lines.append("- 占比波动 = 占比变了 × 这条线好坏程度（与整体均值比），正=好事，负=坏事")
         lines.append("")
 
@@ -230,7 +230,7 @@ class NLGenerator:
                 return col
         return None
 
-    def _rate_narrative(self, name, re, se, result) -> str:
+    def _rate_narrative(self, name, re, se, result, metric_name) -> str:
         """指标波动的叙述段落"""
         row = result.detail_table[result.detail_table["分项"] == name]
         if row.empty:
@@ -263,14 +263,14 @@ class NLGenerator:
         effect = "拉高" if re > 0 else "拉低"
 
         return (
-            f"  {name}自己的好评率从 {base_rate:.2%} {direction}到 {comp_rate:.2%}，"
+            f"  {name}自己的{metric_name}从 {base_rate:.2%} {direction}到 {comp_rate:.2%}，"
             f"{direction}了 {delta_pp:.1f} 个百分点。"
             f"它在上期体量占 {base_share:.0%}，"
             f"所以光这一项服务质量{'下滑' if re < 0 else '提升'}，"
-            f"就把整体好评率{effect}了 {re_pp:.2f} 个百分点。"
+            f"就把整体{metric_name}{effect}了 {re_pp:.2f} 个百分点。"
         )
 
-    def _share_narrative(self, name, re, se, result) -> str:
+    def _share_narrative(self, name, re, se, result, metric_name) -> str:
         """占比波动的叙述段落"""
         row = result.detail_table[result.detail_table["分项"] == name]
         if row.empty:
@@ -291,7 +291,7 @@ class NLGenerator:
 
         if isinstance(base_share, str) or base_share == 0:
             return (
-                f"  上期不存在，本期好评率 {comp_rate:.2%}，"
+                f"  上期不存在，本期{metric_name} {comp_rate:.2%}，"
                 f"评价量占比 {comp_share:.2%}，全部贡献来自新增。"
             )
 
@@ -300,11 +300,11 @@ class NLGenerator:
 
         # 好评率与整体的关系
         if comp_rate > base_overall:
-            rate_vs_overall = f"好评率 {comp_rate:.2%} 高于整体均值 {base_overall:.2%}"
+            rate_vs_overall = f"{metric_name} {comp_rate:.2%} 高于整体均值 {base_overall:.2%}"
             # 高于整体：占比涨=好，占比降=拖后腿
             logic = "权重调高拉高整体" if comp_share >= base_share else "权重调低拖后腿"
         else:
-            rate_vs_overall = f"好评率 {comp_rate:.2%} 低于整体均值 {base_overall:.2%}"
+            rate_vs_overall = f"{metric_name} {comp_rate:.2%} 低于整体均值 {base_overall:.2%}"
             # 低于整体：占比涨=拖后腿，占比降=好事
             logic = "权重调高拖后腿" if comp_share >= base_share else "权重调低反而是好事"
 

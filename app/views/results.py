@@ -5,11 +5,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import streamlit as st
+import pandas as pd
 
 from metric_analyzer.engine import AnalysisEngine
 from metric_analyzer.interpreters.nl_generator import NLGenerator
 from metric_analyzer.components.charts import waterfall_chart, contribution_bar, composition_pie, dual_factor_grouped_bar
 from metric_analyzer.components.tables import result_table
+from metric_analyzer.components.exporters import export_excel, export_pdf
 from metric_analyzer.models import AnalysisMode, DecompositionMethod
 
 
@@ -66,6 +68,31 @@ def render():
 
     # 拆解结果信息
     st.caption(f"拆解方法：{result.method.value} | MECE：{'是' if result.is_mece else '否'}")
+
+    # 导出功能
+    st.subheader("导出报告")
+    col_export1, col_export2 = st.columns(2)
+
+    with col_export1:
+        if st.button("导出 Excel 报告", use_container_width=True):
+            original_data = st.session_state.get("data", pd.DataFrame())
+            excel_bytes = export_excel(result, config, original_data, summary)
+            st.download_button(
+                label="下载 Excel 文件",
+                data=excel_bytes,
+                file_name=f"{config.name}_分析报告.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+
+    with col_export2:
+        if st.button("导出 PDF 报告", use_container_width=True):
+            pdf_bytes = export_pdf(result, config, summary, top_n)
+            st.download_button(
+                label="下载 PDF 文件",
+                data=pdf_bytes,
+                file_name=f"{config.name}_分析报告.pdf",
+                mime="application/pdf",
+            )
 
     # 重新分析
     if st.button("重新分析", use_container_width=True):
