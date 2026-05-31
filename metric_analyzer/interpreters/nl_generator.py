@@ -313,14 +313,19 @@ class NLGenerator:
         comp_rate = row[rate_cols[1]] if len(rate_cols) >= 2 else 0
         base_overall = row.get("上期整体均值", 0)
 
+        share_label = "订单占比" if self._is_negative_metric(metric_name) else "评价量占比"
         if isinstance(base_share, str) or base_share == 0:
             return (
                 f"  上期不存在，本期{metric_name} {comp_rate:.2%}，"
-                f"评价量占比 {comp_share:.2%}，全部贡献来自新增。"
+                f"{share_label} {comp_share:.2%}，全部贡献来自新增。"
             )
 
         delta_pp = abs(comp_share - base_share) * 100
         direction = "涨" if comp_share > base_share else "降"
+
+        # 根据指标类型动态调整占比名称
+        is_negative = self._is_negative_metric(metric_name)
+        share_label = "订单占比" if is_negative else "评价量占比"
 
         # 好评率与整体的关系
         if comp_rate > base_overall:
@@ -333,8 +338,8 @@ class NLGenerator:
             logic = "权重调高拖后腿" if comp_share >= base_share else "权重调低反而是好事"
 
         return (
-            f"  评价量占比从 {base_share:.2%} {direction}到 {comp_share:.2%}"
-            f"（{direction}了 {delta_pp:.1f} 个百分点）。"
+            f"  {share_label}从 {base_share:.2%} {direction}到 {comp_share:.2%}"
+            f"（{direction}了 {delta_pp:.2f} 个百分点）。"
             f"它的{rate_vs_overall}，{logic}，"
             f"贡献了 {se*100:+.2f} 个百分点。"
         )
