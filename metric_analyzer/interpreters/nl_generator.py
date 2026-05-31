@@ -327,14 +327,18 @@ class NLGenerator:
         is_negative = self._is_negative_metric(metric_name)
         share_label = "订单占比" if is_negative else "评价量占比"
 
-        # 好评率与整体的关系
-        if comp_rate > base_overall:
-            rate_vs_overall = f"{metric_name} {comp_rate:.2%} 高于整体均值 {base_overall:.2%}"
-            # 高于整体：占比涨=好，占比降=拖后腿
-            logic = "权重调高拉高整体" if comp_share >= base_share else "权重调低拖后腿"
+        # 判断该分项表现是否优于整体
+        # 正向指标：高于整体=表现好；负向指标：低于整体=表现好
+        is_better = (comp_rate > base_overall) if not is_negative else (comp_rate < base_overall)
+        rate_label = "高于" if comp_rate > base_overall else "低于"
+        rate_vs_overall = f"{metric_name} {comp_rate:.2%} {rate_label}整体均值 {base_overall:.2%}"
+
+        if is_better:
+            if is_negative:
+                logic = "权重调高改善整体" if comp_share >= base_share else "权重调低反而拖后腿"
+            else:
+                logic = "权重调高拉高整体" if comp_share >= base_share else "权重调低反而拖后腿"
         else:
-            rate_vs_overall = f"{metric_name} {comp_rate:.2%} 低于整体均值 {base_overall:.2%}"
-            # 低于整体：占比涨=拖后腿，占比降=好事
             logic = "权重调高拖后腿" if comp_share >= base_share else "权重调低反而是好事"
 
         return (
