@@ -278,12 +278,19 @@ class NLGenerator:
         re_pp = abs(re) * 100
         direction = "涨" if comp_rate > base_rate else "掉"
         effect = "拉高" if re > 0 else "拉低"
+        is_negative = self._is_negative_metric(metric_name)
+
+        # 根据指标方向调整措辞
+        if is_negative:
+            quality_text = "售后问题增加" if re > 0 else "售后问题减少"
+        else:
+            quality_text = "服务质量提升" if re > 0 else "服务质量下滑"
 
         return (
             f"  {name}自己的{metric_name}从 {base_rate:.2%} {direction}到 {comp_rate:.2%}，"
             f"{direction}了 {delta_pp:.1f} 个百分点。"
             f"它在上期体量占 {base_share:.0%}，"
-            f"所以光这一项服务质量{'下滑' if re < 0 else '提升'}，"
+            f"所以光这一项{quality_text}，"
             f"就把整体{metric_name}{effect}了 {re_pp:.2f} 个百分点。"
         )
 
