@@ -25,8 +25,14 @@ class AdditionDecomposer(BaseDecomposer):
 
     def _static_decompose(self, config: MetricConfig) -> DecompositionResult:
         """静态拆解：各分项占比"""
-        df = config.data
-        dim = config.dimensions[0]
+        df = config.data.copy()
+        dims = config.dimensions
+        if len(dims) > 1 and config.multi_dim_mode == "cross":
+            cross_dim = "×".join(dims)
+            df[cross_dim] = df[dims].apply(lambda row: " - ".join(row.astype(str)), axis=1)
+            dim = cross_dim
+        else:
+            dim = dims[0]
         val_col = config.value_col
 
         grouped = df.groupby(dim)[val_col].sum().sort_values(ascending=False)
@@ -63,8 +69,14 @@ class AdditionDecomposer(BaseDecomposer):
 
     def _dynamic_decompose(self, config: MetricConfig) -> DecompositionResult:
         """动态拆解：各分项变化贡献"""
-        df = config.data
-        dim = config.dimensions[0]
+        df = config.data.copy()
+        dims = config.dimensions
+        if len(dims) > 1 and config.multi_dim_mode == "cross":
+            cross_dim = "×".join(dims)
+            df[cross_dim] = df[dims].apply(lambda row: " - ".join(row.astype(str)), axis=1)
+            dim = cross_dim
+        else:
+            dim = dims[0]
         val_col = config.value_col
         time_col = config.time_col
 

@@ -55,6 +55,7 @@ class MetricConfig:
     base_period: Optional[str] = None
     compare_period: Optional[str] = None
     top_n: int = 5
+    multi_dim_mode: str = "cross"  # "cross"=交叉, "hierarchy"=分层
 
     def __post_init__(self):
         if self.top_n < 3:

@@ -25,8 +25,16 @@ class DualFactorDecomposer(BaseDecomposer):
 
     def _static_decompose(self, config: MetricConfig) -> DecompositionResult:
         """静态：各分项的相对数指标值"""
-        df = config.data
-        dim = config.dimensions[0]
+        df = config.data.copy()
+
+        # 多维度处理：交叉模式时合并维度为组合键
+        dims = config.dimensions
+        if len(dims) > 1 and config.multi_dim_mode == "cross":
+            cross_dim = "×".join(dims)
+            df[cross_dim] = df[dims].apply(lambda row: " - ".join(row.astype(str)), axis=1)
+            dim = cross_dim
+        else:
+            dim = dims[0]
         num_col = config.numerator_col
         den_col = config.denominator_col
 
@@ -71,8 +79,16 @@ class DualFactorDecomposer(BaseDecomposer):
         对新增维度：无法定义上期指标值，作为"新增维度影响"单独计算（残差法）
         对消失维度：贡献率=0
         """
-        df = config.data
-        dim = config.dimensions[0]
+        df = config.data.copy()
+
+        # 多维度处理：交叉模式时合并维度为组合键
+        dims = config.dimensions
+        if len(dims) > 1 and config.multi_dim_mode == "cross":
+            cross_dim = "×".join(dims)
+            df[cross_dim] = df[dims].apply(lambda row: " - ".join(row.astype(str)), axis=1)
+            dim = cross_dim
+        else:
+            dim = dims[0]
         num_col = config.numerator_col
         den_col = config.denominator_col
         time_col = config.time_col

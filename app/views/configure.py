@@ -98,6 +98,17 @@ def render():
         default=[available_dims[0]] if available_dims else [],
     )
 
+    # 多维度分析模式选择
+    multi_dim_mode = "cross"
+    if len(selected_dims) > 1:
+        st.caption(f"已选择 {len(selected_dims)} 个维度：{' × '.join(selected_dims)}")
+        multi_dim_mode = st.radio(
+            "多维度分析模式",
+            options=["cross", "hierarchy"],
+            format_func=lambda x: "交叉分析（维度组合为分项）" if x == "cross" else "分层分析（按主维度逐层拆解）",
+            index=0,
+        )
+
     # 数值列配置
     st.subheader("数值列配置")
     if selected_method == DecompositionMethod.DUAL_FACTOR:
@@ -128,6 +139,7 @@ def render():
             time_col=time_col if is_dynamic else None,
             base_period=base_period if is_dynamic else None,
             compare_period=compare_period if is_dynamic else None,
+            multi_dim_mode=multi_dim_mode,
         )
 
         if selected_method == DecompositionMethod.DUAL_FACTOR:
