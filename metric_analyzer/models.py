@@ -88,3 +88,4 @@ class DecompositionResult:
     summary: str = ""
     detail_table: pd.DataFrame = field(default_factory=pd.DataFrame)
     chart_data: dict = field(default_factory=dict)
+    child_results: dict = field(default_factory=dict)  # 分层模式：主维度 -> 子拆解结果

@@ -225,11 +225,9 @@ class NLGenerator:
         # 最大关注项：负向指标关注阻碍下降的，正向指标关注加剧下降的
         is_negative = self._is_negative_metric(name)
         if is_negative:
-            # 负向指标：整体下降是好事，找阻碍下降的（total > 0）
             concerns = [c for c in result.contributions if c.value_change > 0]
             concern_label = "需要改善"
         else:
-            # 正向指标：整体下降是坏事，找加剧下降的（total < 0）
             concerns = [c for c in result.contributions if c.value_change < 0]
             concern_label = "拖累因素"
         if concerns:
@@ -237,6 +235,17 @@ class NLGenerator:
 
         if result.is_mece:
             lines.append(f"\n*各因子贡献加总 = {self._pct_signed(sum(c.value_change for c in result.contributions))}，与整体变化一致（MECE）。*")
+
+        # 分层模式：展示子维度拆解
+        if result.child_results:
+            lines.append("\n---")
+            lines.append("**各维度细分：**\n")
+            for main_name, child in result.child_results.items():
+                child_dir = self._direction_text(child["overall_change"])
+                lines.append(f"**{main_name}**（整体{child_dir} {abs(child['overall_change']) * 100:.2f}%）：")
+                for cc in child["contributions"][:3]:
+                    lines.append(f"  - {cc.name}：{self._pct_signed(cc.value_change)}")
+                lines.append("")
 
         return "\n".join(lines)
 
