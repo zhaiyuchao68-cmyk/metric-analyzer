@@ -48,7 +48,7 @@ class TestNLGenerator:
         text = self.generator.generate(result, "客户满意度", top_n=3)
         assert "客户满意度" in text
         assert "英语线" in text
-        assert "-3.13%" in text or "-2.79%" in text
+        assert "-3.12" in text or "-2.79" in text
 
     def test_addition_summary(self):
         result = DecompositionResult(

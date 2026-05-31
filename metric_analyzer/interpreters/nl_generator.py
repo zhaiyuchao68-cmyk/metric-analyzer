@@ -32,6 +32,11 @@ class NLGenerator:
     def _is_absolute(self, result) -> bool:
         return result.method in _ABSOLUTE_METHODS
 
+    def _is_negative_metric(self, name: str) -> bool:
+        """判断是否为负向指标（越低越好）"""
+        negative_keywords = ["售后", "投诉", "退货", "退款", "故障", "流失", "离职"]
+        return any(kw in name for kw in negative_keywords)
+
     def _direction_text(self, change: float) -> str:
         if change > 0:
             return "上升"
@@ -49,7 +54,7 @@ class NLGenerator:
         if abs(pct) < 1e-6:
             return "0.00%"
         sign = "+" if pct > 0 else ""
-        return f"{sign}{pct:.2f}%"
+        return f"{sign}{pct:.4f}%"
 
     def _pp(self, value: float) -> str:
         """将小数值转为百分点文本，如 -0.023 → '2.30'"""
@@ -180,11 +185,15 @@ class NLGenerator:
             se = c.share_effect
             total = c.value_change
 
-            # 标题：XX线对整体XX的拖累/拉动 = ±X.XX%，拆成两块
-            if total < 0:
-                lines.append(f"**{c.name}**对整体{name}的拖累 = **{self._pct_signed(total)}**，拆成两块：\n")
-            else:
-                lines.append(f"**{c.name}**对整体{name}的拉动 = **{self._pct_signed(total)}**，拆成两块：\n")
+            # 判断用词：根据指标方向和贡献方向
+            is_negative = self._is_negative_metric(name)
+            overall_down = result.overall_change < 0
+            # 同向变化 = 推动了变化方向
+            same_direction = (total < 0) == (overall_down)
+            # 对于负向指标，下降是好事；对于正向指标，上升是好事
+            is_good = same_direction if is_negative else not same_direction
+            label = "贡献" if is_good else "拖累"
+            lines.append(f"**{c.name}**对整体{name}的{label} = **{self._pct_signed(total)}**，拆成两块：\n")
 
             re_is_major = abs(re) >= abs(se)
             re_label = "大头" if re_is_major else "小头"
@@ -213,10 +222,18 @@ class NLGenerator:
         lines.append("- 占比波动 = 占比变了 × 这条线好坏程度（与整体均值比），正=好事，负=坏事")
         lines.append("")
 
-        # 最大拖累项
-        negatives = [c for c in result.contributions if c.value_change < 0]
-        if negatives:
-            lines.append(f"**建议**：重点关注 **{negatives[0].name}**，是最大的拖累因素。")
+        # 最大关注项：负向指标关注阻碍下降的，正向指标关注加剧下降的
+        is_negative = self._is_negative_metric(name)
+        if is_negative:
+            # 负向指标：整体下降是好事，找阻碍下降的（total > 0）
+            concerns = [c for c in result.contributions if c.value_change > 0]
+            concern_label = "需要改善"
+        else:
+            # 正向指标：整体下降是坏事，找加剧下降的（total < 0）
+            concerns = [c for c in result.contributions if c.value_change < 0]
+            concern_label = "拖累因素"
+        if concerns:
+            lines.append(f"**建议**：重点关注 **{concerns[0].name}**，是最大的{concern_label}。")
 
         if result.is_mece:
             lines.append(f"\n*各因子贡献加总 = {self._pct_signed(sum(c.value_change for c in result.contributions))}，与整体变化一致（MECE）。*")
