@@ -18,6 +18,10 @@ class MetricRegistry:
             **CALL_CENTER_PRESETS,
             **ECOMMERCE_PRESETS,
         }
+        # 自动加载项目根目录的 custom_metrics.yaml
+        default_yaml = Path(__file__).parent.parent.parent.parent / "custom_metrics.yaml"
+        if default_yaml.exists():
+            self.load_yaml(str(default_yaml))
 
     def get_preset(self, name: str) -> Optional[dict]:
         """获取预设指标配置"""

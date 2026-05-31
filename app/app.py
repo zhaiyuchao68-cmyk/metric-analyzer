@@ -8,7 +8,7 @@ import streamlit as st
 # 将项目根目录加入 path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.views import upload, configure, results
+from app.views import upload, configure, results, presets
 
 
 def main():
@@ -23,7 +23,7 @@ def main():
 
     page = st.sidebar.radio(
         "导航",
-        ["上传数据", "配置拆解", "查看结果"],
+        ["上传数据", "配置拆解", "查看结果", "预设指标"],
         index=0,
     )
 
@@ -33,6 +33,8 @@ def main():
         configure.render()
     elif page == "查看结果":
         results.render()
+    elif page == "预设指标":
+        presets.render()
 
 
 if __name__ == "__main__":
