@@ -149,3 +149,56 @@ def composition_pie(result: DecompositionResult) -> go.Figure:
     )
 
     return fig
+
+
+def trend_line(df, time_col, value_col, dim_col=None, top_n=5) -> go.Figure:
+    """趋势折线图：指标随时间变化
+
+    Args:
+        df: 包含时间列和指标值的数据框
+        time_col: 时间列名
+        value_col: 指标值列名
+        dim_col: 维度列名（可选，展示各维度趋势）
+        top_n: 最多展示多少个维度
+    """
+    periods = sorted(df[time_col].unique())
+
+    fig = go.Figure()
+
+    if dim_col:
+        # 按维度分组展示
+        dim_values = df[dim_col].value_counts().head(top_n).index.tolist()
+        for dim in dim_values:
+            dim_df = df[df[dim_col] == dim].sort_values(time_col)
+            fig.add_trace(go.Scatter(
+                x=dim_df[time_col],
+                y=dim_df[value_col],
+                mode="lines+markers",
+                name=str(dim),
+                text=[f"{v:.2%}" for v in dim_df[value_col]],
+                textposition="top center",
+            ))
+
+    # 整体趋势
+    overall_df = df.groupby(time_col)[value_col].mean().reset_index()
+    overall_df = overall_df.sort_values(time_col)
+    fig.add_trace(go.Scatter(
+        x=overall_df[time_col],
+        y=overall_df[value_col],
+        mode="lines+markers",
+        name="整体",
+        line=dict(width=3, dash="dash"),
+        text=[f"{v:.2%}" for v in overall_df[value_col]],
+        textposition="top center",
+    ))
+
+    fig.update_layout(
+        title="指标趋势",
+        xaxis_title=time_col,
+        yaxis_title="指标值",
+        yaxis_tickformat=".2%",
+        height=400,
+        hovermode="x unified",
+    )
+
+    return fig
